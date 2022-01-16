@@ -9402,7 +9402,6 @@ color: ${config.product_content_more_button_hover_color};
         tags:[],
         collection:[],
       };
-      var param_test = {};
 
       $.each(related_conditions,function(i,v){
         var name_field = v;
