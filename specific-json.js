@@ -9394,44 +9394,48 @@
 
         var list_products = [];
         if (config.filter_products == 'related') {
-            var field_condition = simesyProductSlider.data;
-            var related_conditions = config.related_conditions;
-            var params = {
-                vendor: [],
-                type: [],
-                tag: [],
-                collection: [],
-            };
-            $.each(related_conditions, function (i, v) {
-                var name_field = v;
-                $.each(field_condition[v], function (i, key) {
-                    if (name_field == 'tags') {
-                        params["tag"].push('(tag:"' + key + '")');
-                    } else {
-                        params[name_field].push('(' + name_field + ':"' + key + '")');
-                    }
-                })
-            })
-            $.each(params, function (i, param) {
-                if (param.length > 0) {
-                    var str_filter = Object.values(param).join(' AND ');
-                    $.ajax({
-                        async: false,
-                        url: '/search?q=' + str_filter + '&view=simesy-product-slider',
-                        success: function (data) {
-                            $.each(JSON.parse(data), function (i, pro) {
-                                var check_null = list_products.find(function (el) {
-                                    return el.handle == pro.handle
-                                });
-                                if (check_null == undefined) {
-                                    list_products.push(pro);
-                                }
-                            })
-                        }
-                    })
+               var field_condition = simesyProductSlider.data;
+      var related_conditions = config.related_conditions;
+      var params = {
+        vendor:[],
+        type:[],
+        tags:[],
+        collection:[],
+      };
+      $.each(related_conditions,function(i,v){
+        var name_field = v;
+        $.each(field_condition[v],function(i,key){
+          if(name_field == 'tags'){
+            params["tags"].push('(tag:"'+key+'")');
+          }else{
+            params[name_field].push('('+name_field+':"'+key+'")');
+          }
+        })
+      })
+      $.each(related_conditions,function(i,condi){
+        var param = params[condi];
+        if(param.length > 0){
+          var str_filter = Object.values(param).join(' AND ');
+          $.ajax({
+            async:false,
+            url:'/search?q='+str_filter+'&view=simesy-product-slider',
+            success:function(data){
+              $.each(JSON.parse(data),function(i,pro){
+                var check_null = list_products.find(function(el){
+                  return el.handle == pro.handle
+                });
+                if(check_null == undefined){
+                  list_products.push(pro);
                 }
+              })
+            }
+          })
+        }
 
-            })
+      })
+      list_products = list_products.filter(function(ele){
+        return (ele.handle != simesyProductSlider.product_handle);
+      })
         } else if (config.filter_products == 'recently_viewed') {
             var get_local_recently = localStorage.getItem('simesy_recently');
             var get_recently = get_local_recently ? JSON.parse(get_local_recently) : [];
