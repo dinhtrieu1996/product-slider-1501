@@ -7692,24 +7692,24 @@
     };
 
     /* This is my app's JavaScript */
-    var initProductRecently = function ($) {
-        if (simesyProductSlider.product != undefined) {
-            var product_handle = simesyProductSlider.product_handle ? simesyProductSlider.product_handle : '';
-            var simesy_recently_current = localStorage.getItem('simesy_recently');
-            if (!simesy_recently_current) {
-                simesy_recently_current = [];
-            } else {
-                simesy_recently_current = JSON.parse(simesy_recently_current);
-            }
-            var check_recently = simesy_recently_current.filter(function (recently) {
-                return (recently.handle == product_handle);
-            });
-            if (check_recently.length == 0) {
-                simesy_recently_current.push(simesyProductSlider.product);
-                localStorage.setItem('simesy_recently', JSON.stringify(simesy_recently_current));
-            }
-        }
-    }
+ var initProductRecently = function($){
+if(simesyProductSlider.product != undefined){
+var product_handle = simesyProductSlider.product_handle ? simesyProductSlider.product_handle : '';
+var simesy_recently_current = localStorage.getItem('simesy_recently');
+if(!simesy_recently_current){
+simesy_recently_current = [];
+}else{
+simesy_recently_current = JSON.parse(simesy_recently_current);
+}
+var check_recently = simesy_recently_current.filter(function(recently){
+return (recently.handle != product_handle);
+});
+
+check_recently.push(simesyProductSlider.product);
+localStorage.setItem('simesy_recently', JSON.stringify(check_recently));
+
+}
+}
     function formatMoney(cents, format) {
         var moneyFormat = '${{amount}}'; // eslint-disable-line camelcase
         if (typeof cents === 'string') {
@@ -9405,9 +9405,12 @@
       $.each(related_conditions,function(i,v){
         var name_field = v;
         $.each(field_condition[v],function(i,key){
-          if(name_field == 'tags'){
+          if(name_field == 'tags'){ 
             params["tags"].push('(tag:"'+key+'")');
-          }else{
+          }if(name_field == 'type'){
+            params["type"].push('(product_type:"'+key+'")');
+          }
+          else{
             params[name_field].push('('+name_field+':"'+key+'")');
           }
         })
@@ -9439,7 +9442,7 @@
         } else if (config.filter_products == 'recently_viewed') {
             var get_local_recently = localStorage.getItem('simesy_recently');
             var get_recently = get_local_recently ? JSON.parse(get_local_recently) : [];
-            list_products = get_recently;
+            list_products = get_recently.reverse();
 
         } else if (config.filter_products == 'specific') {
             $.each(config.product, function (i, item) {
