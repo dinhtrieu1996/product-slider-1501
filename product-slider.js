@@ -7692,25 +7692,28 @@
     };
 
     /* This is my app's JavaScript */
- var initProductRecently = function($){
-if(simesyProductSlider.product != undefined){
-var product_handle = simesyProductSlider.product_handle ? simesyProductSlider.product_handle : '';
-var simesy_recently_current = localStorage.getItem('simesy_recently');
-if(!simesy_recently_current){
-simesy_recently_current = [];
-}else{
-simesy_recently_current = JSON.parse(simesy_recently_current);
-}
-var check_recently = simesy_recently_current.filter(function(recently){
-return (recently.handle != product_handle);
-});
+    var initProductRecently = function ($) {
+        if (simesyProductSlider.product != undefined) {
+            var product_handle = simesyProductSlider.product_handle ? simesyProductSlider.product_handle : '';
+            var simesy_recently_current = localStorage.getItem('simesy_recently');
+            if (!simesy_recently_current) {
+                simesy_recently_current = [];
+            } else {
+                simesy_recently_current = JSON.parse(simesy_recently_current);
+            }
+            var check_recently = simesy_recently_current.filter(function (recently) {
+                return (recently.handle != product_handle);
+            });
 
-check_recently.push(simesyProductSlider.product);
-localStorage.setItem('simesy_recently', JSON.stringify(check_recently));
+            check_recently.push(simesyProductSlider.product);
+            localStorage.setItem('simesy_recently', JSON.stringify(check_recently));
 
-}
-}
-    function formatMoney(cents, format) {
+        }
+    }
+    function formatMoney(filter_products, cents, format) {
+        if (filter_products === "specific") {
+            cents = cents * 100;
+        }
         var moneyFormat = '${{amount}}'; // eslint-disable-line camelcase
         if (typeof cents === 'string') {
             cents = cents.replace('.', '');
@@ -7783,9 +7786,9 @@ localStorage.setItem('simesy_recently', JSON.stringify(check_recently));
             .find(".simesy-slider-section")
             .each(function (i, v) {
                 var id = $(this).data("slider-id");
-                var shop = 'pure-theme-simesy.myshopify.com';
+                var shop = window.Shopify.shop;
                 $.ajax({
-                    url: "http://product-slider-dev.simesy.com/api/get_slider",
+                    url: "http://product-slider.simesy.com/api/get_slider",
                     type: "post",
                     dataType: "JSON",
                     async: false,
@@ -7919,9 +7922,9 @@ localStorage.setItem('simesy_recently', JSON.stringify(check_recently));
         html_popup += `<p class="product_vendor_qv">${product.vendor}</p>`;
         html_popup += `<h1 class="product_vendor_title"><a href="${$(this).attr('href')}">${product.title}</a></h1>`;
         html_popup += `<div class="product_price_qv">`;  
-        html_popup += `<span class="price_qv_current">${formatMoney(product.variants[0].price,simesyProductSlider.moneyFormat)}</span>`;
+        html_popup += `<span class="price_qv_current">${formatMoney(config.filter_products,product.variants[0].price,simesyProductSlider.moneyFormat)}</span>`;
            if(parseInt(product.variants[0].compare_at_price) > parseInt(product.variants[0].price,simesyProductSlider.moneyFormat)){
-                 html_popup += `<del class="price_qv_del">${formatMoney(product.variants[0].compare_at_price,simesyProductSlider.moneyFormat)}</del>`;
+                 html_popup += `<del class="price_qv_del">${formatMoney(config.filter_products,product.variants[0].compare_at_price,simesyProductSlider.moneyFormat)}</del>`;
            }
         html_popup += `</div>`;
         html_popup += `<div class="product_select_qv"><select class="select_variant">`;
@@ -7948,9 +7951,9 @@ localStorage.setItem('simesy_recently', JSON.stringify(check_recently));
           var price = parseInt($('.select_variant option:selected').data('price'));
           var price_compare = parseInt($('.select_variant option:selected').data('compare'));
           if(price_compare > price){
-                $('.simesy-product-qv .product_price_qv').html('<span class="price_qv_current">'+formatMoney(price,simesyProductSlider.moneyFormat)+'</span><del class="price_qv_del">'+formatMoney(price_compare,simesyProductSlider.moneyFormat)+'</del>')
+                $('.simesy-product-qv .product_price_qv').html('<span class="price_qv_current">'+formatMoney(config.filter_products,price,simesyProductSlider.moneyFormat)+'</span><del class="price_qv_del">'+formatMoney(config.filter_products,price_compare,simesyProductSlider.moneyFormat)+'</del>')
           }else{
-             $('.simesy-product-qv .product_price_qv').html('<span class="price_qv_current">'+formatMoney(price,simesyProductSlider.moneyFormat)+'</span>')
+             $('.simesy-product-qv .product_price_qv').html('<span class="price_qv_current">'+formatMoney(config.filter_products,price,simesyProductSlider.moneyFormat)+'</span>')
           }
         })
         $(document).on('click','.simesy-modal-close',function(e){
@@ -8242,7 +8245,7 @@ localStorage.setItem('simesy_recently', JSON.stringify(check_recently));
                 )
             ) {
                 var nav_pd_bottom =
-                    nav_desktop == "true" || nav_mobile == "true" ? "46px" : "66px";
+                    nav_desktop == "true" || nav_mobile == "true" ? "66px" : "46px";
                 css += ` #simesy-slider-section.simesy-slider-section-${id}{
        padding-bottom: ${nav_pd_bottom};
        }`;
@@ -9394,52 +9397,52 @@ color: ${config.product_content_more_button_hover_color};
 
         var list_products = [];
         if (config.filter_products == 'related') {
-               var field_condition = simesyProductSlider.data;
-      var related_conditions = config.related_conditions;
-      var params = {
-        vendor:[],
-        type:[],
-        tags:[],
-        collection:[],
-      };
+            var field_condition = simesyProductSlider.data;
+            var related_conditions = config.related_conditions;
+            var params = {
+                vendor: [],
+                type: [],
+                tags: [],
+                collection: [],
+            };
 
-       $.each(related_conditions,function(i,v){
-        var name_field = v;
-        $.each(field_condition[v],function(i,key){
-          if(name_field == 'tags'){ 
-            params["tags"].push('(tag:"'+key+'")');
-          }if(name_field == 'type'){
-            params["type"].push('(product_type:"'+key+'")');
-          }
-          else{
-            params[name_field].push('('+name_field+':"'+key+'")');
-          }
-        })
-      })
-      $.each(related_conditions,function(i,condi){
-        var param = params[condi];
-        if(param.length > 0){
-          var str_filter = Object.values(param).join(' AND ');
-          $.ajax({
-            async:false,
-            url:'/search?q='+str_filter+'&view=simesy-product-slider',
-            success:function(data){
-              $.each(JSON.parse(data),function(i,pro){
-                var check_null = list_products.find(function(el){
-                  return el.handle == pro.handle
-                });
-                if(check_null == undefined){
-                  list_products.push(pro);
+            $.each(related_conditions, function (i, v) {
+                var name_field = v;
+                $.each(field_condition[v], function (i, key) {
+                    if (name_field == 'tags') {
+                        params["tags"].push('(tag:"' + key + '")');
+                    } if (name_field == 'type') {
+                        params["type"].push('(product_type:"' + key + '")');
+                    }
+                    else {
+                        params[name_field].push('(' + name_field + ':"' + key + '")');
+                    }
+                })
+            })
+            $.each(related_conditions, function (i, condi) {
+                var param = params[condi];
+                if (param.length > 0) {
+                    var str_filter = Object.values(param).join(' AND ');
+                    $.ajax({
+                        async: false,
+                        url: '/search?q=' + str_filter + '&view=simesy-product-slider',
+                        success: function (data) {
+                            $.each(JSON.parse(data), function (i, pro) {
+                                var check_null = list_products.find(function (el) {
+                                    return el.handle == pro.handle
+                                });
+                                if (check_null == undefined) {
+                                    list_products.push(pro);
+                                }
+                            })
+                        }
+                    })
                 }
-              })
-            }
-          })
-        }
 
-      })
-      list_products = list_products.filter(function(ele){
-        return (ele.handle != simesyProductSlider.product_handle);
-      })
+            })
+            list_products = list_products.filter(function (ele) {
+                return (ele.handle != simesyProductSlider.product_handle);
+            })
         } else if (config.filter_products == 'recently_viewed') {
             var get_local_recently = localStorage.getItem('simesy_recently');
             var get_recently = get_local_recently ? JSON.parse(get_local_recently) : [];
@@ -9448,26 +9451,32 @@ color: ${config.product_content_more_button_hover_color};
         } else if (config.filter_products == 'specific') {
             var get_products = products;
             $.each(get_products, function (i, pro) {
+                var status = pro.status.toLowerCase() == "active" ? true : false;
                 var avai_stock = true;
                 var quantity_stock = 0;
                 $.each(pro.variants, function (i, variant) {
                     if (variant.inventory_policy == 'continue' || variant.inventory_management != 'shopify') {
                         return false;
                     } else {
+
                         quantity_stock += variant.inventory_quantity;
                         avai_stock = quantity_stock <= 0 ? false : true;
                     }
                 })
-                list_products.push({
-                    available: avai_stock,
-                    id: pro.id,
-                    featured_image: pro.images[0].src,
-                    handle: pro.handle,
-                    title: pro.title,
-                    description: pro.body_html,
-                    variants: pro.variants,
-                })
+
+                if (status) {
+                    list_products.push({
+                        available: avai_stock,
+                        id: pro.id,
+                        featured_image: pro.images[0].src,
+                        handle: pro.handle,
+                        title: pro.title,
+                        description: pro.body_html,
+                        variants: pro.variants,
+                    })
+                }
             })
+
         }
 
         else {
@@ -9531,23 +9540,20 @@ color: ${config.product_content_more_button_hover_color};
                     return array_price.reduce((max, val) => parseFloat(max) < parseFloat(val) ? max : val)
                 }
                 price_min = minValue(array_price);
-                if (avai) {
-                    data_all.push({
-                        status: avai,
-                        pro_id: value.id,
-                        available: avai_stock,
-                        image: value.featured_image != null ? value.featured_image : "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_medium.png",
-                        url: "/products/" + value.handle,
-                        title: value.title,
-                        description: value.description,
-                        price: price_min,
-                        compare_price: price_max,
-                        id: value.variants[0].id,
-                        variants: value.variants,
-                        prices: prices,
-                        is_sale: check_sale
-                    });
-                }
+                data_all.push({
+                    pro_id: value.id,
+                    available: avai_stock,
+                    image: value.featured_image != null ? value.featured_image : "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_medium.png",
+                    url: "/products/" + value.handle,
+                    title: value.title,
+                    description: value.description,
+                    price: price_min,
+                    compare_price: price_max,
+                    id: value.variants[0].id,
+                    variants: value.variants,
+                    prices: prices,
+                    is_sale: check_sale
+                });
             });
             $.each(data_all, function (index, product_data) {
                 var html_img = "",
@@ -9665,11 +9671,11 @@ color: ${config.product_content_more_button_hover_color};
                     var min_compare_at_price = product_data.prices.compare_at_price[0];
                     var max_compare_at_price = product_data.prices.compare_at_price[product_data.prices.compare_at_price.length - 1];
                     if (min_price !== max_price) {
-                        html_price += '<span class="amount">' + formatMoney(min_price, simesyProductSlider.moneyFormat) + ' - ' + formatMoney(max_price, simesyProductSlider.moneyFormat) + '</span>';
+                        html_price += '<span class="amount">' + formatMoney(config.filter_products, min_price, simesyProductSlider.moneyFormat) + ' - ' + formatMoney(config.filter_products, max_price, simesyProductSlider.moneyFormat) + '</span>';
                     } else if (product_data.is_sale && min_compare_at_price === max_compare_at_price) {
-                        html_price += '<del><span class="amount">' + formatMoney(max_compare_at_price, simesyProductSlider.moneyFormat) + '</span></del>' + '<span class="amout">' + formatMoney(min_price, simesyProductSlider.moneyFormat) + '</span>';
+                        html_price += '<del><span class="amount">' + formatMoney(config.filter_products, max_compare_at_price, simesyProductSlider.moneyFormat) + '</span></del>' + '<span class="amout">' + formatMoney(config.filter_products, min_price, simesyProductSlider.moneyFormat) + '</span>';
                     } else {
-                        html_price += '<span class="amount">' + formatMoney(min_price, simesyProductSlider.moneyFormat) + '</span>'
+                        html_price += '<span class="amount">' + formatMoney(config.filter_products, min_price, simesyProductSlider.moneyFormat) + '</span>'
                     }
                     html_price += "</div>";
                 }
